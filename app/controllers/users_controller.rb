@@ -235,32 +235,41 @@ class UsersController < ApplicationController
     end
 
     # Forgot password
-    def forgot_password
-         begin
-         user = User.find_by(email: params[:email])
-        if user
-            render json: {
-                message: "Reset token sent",
-                status_code: 201,
-                data: user
+    def forgot_password       
+        begin
+        user = User.find_by(email: params[:email])
+        if !user
+          render json: {
+                error:"Bad request",
+                message:  'User not found',
+                status_code: 400
             }, 
-            status: :created   
-            else
-            render json: {
-                    error:"Bad request",
-                    message:  user.errors.full_messages,
-                    status_code: 400
-                }, 
-                :status => :bad_request 
-                end
-       rescue => exception
-        render json: { 
+            :status => :not_found
+        else
+            payload = {id:user.id}
+            reset_token = JWT.encode payload, ENV['JWT_SECRET']
+            user.reset_token = reset_token
+            user.save(validate: false)
+            PasswordResetMailer.with(user: user, reset_token: user.reset_token).password_reset.deliver_later
+             render json: {
+                message: "Password Reset link sent successfully",
+                status_code: 201,
+                data: {
+                    email: user.email
+                },
+                reset_token: user.reset_token,
+            }, 
+            status: :ok 
+        end
+        rescue => exception
+            render json: { 
             message: exception, 
             status_code: 500,
             error:"Internal server error", 
             },
             status: :internal_server_error
-       end
+        end
+
     end
 
 

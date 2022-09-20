@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_09_19_133011) do
+ActiveRecord::Schema[7.0].define(version: 2022_09_20_161327) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -23,6 +23,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_09_19_133011) do
     t.string "otp"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "reset_token"
   end
 
 end

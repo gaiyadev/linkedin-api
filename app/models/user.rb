@@ -6,4 +6,7 @@ class User < ApplicationRecord
     validates :password_confirmation, presence: true
     validates :surname, presence: true
     validates :othername, presence: true
+
+    # before_save   :downcase_email
+
 end
