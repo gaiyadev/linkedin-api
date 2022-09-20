@@ -10,6 +10,7 @@ Rails.application.routes.draw do
       put "#$user_prefix/change_password", to: 'users#change_password'
       get "#$user_prefix/:id", to: 'users#find_by_id'
       post "#$user_prefix/forgot_password", to: 'users#forgot_password'
+      put "#$user_prefix/reset_password", to: 'users#reset_password'
       delete "#$user_prefix/:id", to: 'users#destroy'
       # 
     end

@@ -1,4 +1,6 @@
 class MainController < ApplicationController
+    skip_before_action :authorize_request, only: [:index]
+
     def index
         return render json: {
             status: "Success", 

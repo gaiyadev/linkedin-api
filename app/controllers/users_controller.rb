@@ -1,6 +1,6 @@
 class UsersController < ApplicationController
-    skip_before_action :authorize_request, only: [:sign_up, :sign_in, :verify_email,
-        :find_by_id, :forgot_password, :destory]
+    skip_before_action :authorize_request, only: [:sign_up, :sign_in, :verify_email, :find_by_id,
+         :forgot_password, :destory, :reset_password]
 
 
     def sign_up
@@ -15,7 +15,7 @@ class UsersController < ApplicationController
             if user.save() 
                 # Send email 
                 UserMailer.with(user: user).email_verification.deliver_later
-                # 
+                # response
                 return render json: {
                 status: "Success", 
                 status_code: 201, 
@@ -29,7 +29,7 @@ class UsersController < ApplicationController
             else
                 render json: {
                     error:"Bad request",
-                    message:  user.errors.full_messages,
+                    message: user.errors.full_messages,
                     status_code: 400
                 }, 
                 :status => :bad_request 
@@ -38,7 +38,7 @@ class UsersController < ApplicationController
             render json: {
                 message: exception, 
                 status_code: 500,
-                error:"Internal server error",
+                error: "Internal server error",
             }, 
             :status => :internal_server_error 
         end               
@@ -50,8 +50,8 @@ class UsersController < ApplicationController
         user = User.find_by(otp: params[:otp])
         if !user
             render json: {
-                error:"Not found",
-                message:  "Invalid otp",
+                error: "Not found",
+                message: "Invalid otp",
                 status_code: 404
             }, 
             :status => :not_found 
@@ -72,7 +72,7 @@ class UsersController < ApplicationController
         else
             render json: {
                 error:"Unprocessable entity",
-                message:  "Not save",
+                message:  "Error while  saving",
                 status_code: 422
             }, 
             :status => :unprocessable_entity 
@@ -104,7 +104,8 @@ class UsersController < ApplicationController
             time = Time.now + 24.hours.to_i
             render json: {
                 status: "Success",
-                 message: "Login successfully",
+                message: "Login successfully",
+                status_code: 200, 
                 data: {
                     email: user.email,
                     id: user.id
@@ -145,8 +146,9 @@ class UsersController < ApplicationController
         else
             render json: {
             status: "Success",
-                message: "Fetched successfully",
-                 data: user
+            status_code: 200, 
+            message: "Fetched successfully",
+            data: user,
             }, 
             :status => :ok    
         end
@@ -246,7 +248,8 @@ class UsersController < ApplicationController
             }, 
             :status => :not_found
         else
-            payload = {id:user.id}
+            expired_at = Time.now + 2160
+            payload = {id:user.id, exp: expired_at.to_i}
             reset_token = JWT.encode payload, ENV['JWT_SECRET']
             user.reset_token = reset_token
             user.save(validate: false)
@@ -258,6 +261,7 @@ class UsersController < ApplicationController
                     email: user.email
                 },
                 reset_token: user.reset_token,
+                expired_at: expired_at.strftime("%m-%d-%Y %H:%M"),
             }, 
             status: :ok 
         end
@@ -269,7 +273,60 @@ class UsersController < ApplicationController
             },
             status: :internal_server_error
         end
+    end
 
+    # Reset Password
+    def reset_password
+        begin
+        reset_token = params[:reset_token]
+        decoded_token = JWT.decode reset_token, ENV['JWT_SECRET']
+            if !decoded_token
+                render json: { 
+                    errors: "Unauthorized", 
+                    status_code: 401, 
+                    message:"Invalid token" ,
+                }, 
+                status: :unauthorized
+            else
+               user = User.find_by(reset_token: reset_token)
+               if !user
+                 render json: {
+                    error:"Unprocessable entity",
+                    message:  "Invalid token",
+                    status_code: 422
+                }, 
+                :status => :unprocessable_entity 
+               else
+                    hash_password = BCrypt::Password.create(params[:password])
+               user.password_digest = hash_password
+               user.reset_token = nil
+               if user.update(password_params)
+                    render json: {
+                    message: "Password reset successfully",
+                    status_code: 201,
+                    data: {
+                        id:user.id
+                    },
+                    }, 
+                    status: :ok 
+                else
+                    render json: {
+                    error:"Bad request",
+                    message:  user.errors.full_messages,
+                    status_code: 400
+                }, 
+                :status => :bad_request 
+               end 
+               end                             
+            end        
+        rescue => exception
+            render json: { 
+            message: exception, 
+            status_code: 500,
+            error:"Internal server error", 
+            },
+            status: :internal_server_error
+        end
     end
 
 
