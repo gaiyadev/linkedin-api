@@ -1,4 +1,8 @@
 class UsersController < ApplicationController
+    skip_before_action :authorize_request, only: [:sign_up, :sign_in, :verify_email,
+        :find_by_id, :forgot_password, :destory]
+
+
     def sign_up
         begin
             user = User.new()
@@ -86,8 +90,8 @@ class UsersController < ApplicationController
 
     # Sign in
     def sign_in
-          begin
-        user = User.find_by(email: user_params[:email])
+        begin
+       user = User.find_by(email: user_params[:email])
         if user.is_verified == false
            render json: {
                 error: "Forbidden",
@@ -96,15 +100,17 @@ class UsersController < ApplicationController
             status: :forbidden   
         else
             if user && user.authenticate(user_params[:password])
-            # token = encode_token({user_id: user.id, email: user.email})
+            access_token = JsonWebToken::encode(user_id: user.id, email: user.email)
+            time = Time.now + 24.hours.to_i
             render json: {
                 status: "Success",
                  message: "Login successfully",
-                  data: {
+                data: {
                     email: user.email,
                     id: user.id
-            }, 
-            token: nil
+                }, 
+                access_token: access_token,
+                exp: time.strftime("%m-%d-%Y %H:%M"),
             }, 
             status: :ok    
         else
@@ -185,9 +191,9 @@ class UsersController < ApplicationController
 
     # change_password
     def change_password
-        user_id = 7
+    auth_id = @current_user.id
        begin
-        user = User.find_by(id: user_id)
+        user = User.find_by(id: auth_id)
         current_password = params[:current_password]
         hashed_password = user[:password_digest]
         is_match = BCrypt::Password.new(hashed_password) == current_password
@@ -206,6 +212,7 @@ class UsersController < ApplicationController
             render json: {
                 message: "password changed successfully",
                 status_code: 201,
+                status: "Success"
             }, 
             status: :created   
             else
