@@ -24,15 +24,16 @@ class UsersController < ApplicationController
                 :status => :created 
             else
                 render json: {
-                        error:"Bad request",
-                        message:  user.errors.full_messages,
-                        status_code: 400
-                    }, 
-                    :status => :bad_request 
+                    error:"Bad request",
+                    message:  user.errors.full_messages,
+                    status_code: 400
+                }, 
+                :status => :bad_request 
             end
         rescue => exception
             render json: {
-                message: exception, status_code: 500,
+                message: exception, 
+                status_code: 500,
                 error:"Internal server error",
             }, 
             :status => :internal_server_error 
@@ -44,12 +45,12 @@ class UsersController < ApplicationController
         begin
         user = User.find_by(otp: params[:otp])
         if !user
-             render json: {
+            render json: {
                 error:"Not found",
                 message:  "Invalid otp",
                 status_code: 404
             }, 
-                :status => :not_found 
+            :status => :not_found 
         else
         user.is_verified = true
         user.otp = nil
@@ -63,19 +64,20 @@ class UsersController < ApplicationController
                     is_verified: user.is_verified
                 }, 
              }, 
-                :status => :created 
+            :status => :created 
         else
             render json: {
-                error:"Not found",
-                message:  "User not found",
-                status_code: 404
+                error:"Unprocessable entity",
+                message:  "Not save",
+                status_code: 422
             }, 
-                :status => :not_found 
+            :status => :unprocessable_entity 
         end
         end       
         rescue => exception
-              render json: {
-                message: exception, status_code: 500,
+            render json: {
+                message: exception,
+                status_code: 500,
                 error:"Internal server error",
             }, 
             :status => :internal_server_error 
@@ -91,7 +93,7 @@ class UsersController < ApplicationController
                 error: "Forbidden",
                 message: "Account not verified",
             }, 
-             status: :forbidden   
+            status: :forbidden   
         else
             if user && user.authenticate(user_params[:password])
             # token = encode_token({user_id: user.id, email: user.email})
@@ -100,7 +102,7 @@ class UsersController < ApplicationController
                  message: "Login successfully",
                   data: {
                     email: user.email,
-                     id: user.id
+                    id: user.id
             }, 
             token: nil
             }, 
@@ -114,11 +116,109 @@ class UsersController < ApplicationController
         end
         end
         rescue => exception
-            render json: { error: exception }, status: :internal_server_error
+            render json: { 
+                message: exception, 
+                status_code: 500,
+                error:"Internal server error",
+            }, 
+            status: :internal_server_error
         end   
     end
+    
+    # Find by id
+
+    def find_by_id
+       begin
+        user = User.select("id, surname, othername, is_verified, email").find_by(id: params[:id])
+        if !user
+             render json: {
+                error: "Not found",
+                message: "User not found",
+            }, 
+            :status => :not_found    
+        else
+            render json: {
+            status: "Success",
+                message: "Fetched successfully",
+                 data: user
+            }, 
+            :status => :ok    
+        end
+           
+        rescue => exception
+            render json: {
+                message: exception, 
+                status_code: 500
+            },
+            :status => :internal_server_error    
+        end
+    end
+
+    # Delete user
+    def destroy
+        begin
+            user = User.find(params[:id])
+            if user.destroy
+                render json: {
+                status: "Success",
+                    message: "Deleted successfully",
+                    data: nil
+                }, 
+                :status => :ok    
+            else
+                render json: {
+                    error:"Unprocessable entity",
+                    message:  "user not found",
+                    status_code: 422
+                }, 
+                :status => :unprocessable_entity 
+            end
+        rescue => exception
+            render json: {
+                message: exception, 
+                status_code: 500
+            },
+            :status => :internal_server_error    
+        end
+    end
+    
+
+    # change_password
+    def change_password
+        user_id = 1
+       begin
+         user = User.find_by(id: user_id)
+        if user.update(password_params)
+         render json: {
+            message: "password changes successfully",
+            status_code: 201,
+        }, 
+        status: :created   
+        else
+       render json: {
+            error:"Bad request",
+            message:  user.errors.full_messages,
+            status_code: 400
+        }, 
+        :status => :bad_request 
+        end
+       rescue => exception
+        render json: { 
+            message: exception, 
+            status_code: 500,
+            error:"Internal server error", 
+            },
+             status: :internal_server_error
+       end
+    end
     # 
+    private
     def user_params
         params.permit(:surname, :email, :password, :password_confirmation, :othername)
+    end
+
+    private
+     def password_params
+        params.permit(:password, :password_confirmation)
     end
 end
