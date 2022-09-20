@@ -12,7 +12,9 @@ Rails.application.routes.draw do
       post "#$user_prefix/forgot_password", to: 'users#forgot_password'
       put "#$user_prefix/reset_password", to: 'users#reset_password'
       delete "#$user_prefix/:id", to: 'users#destroy'
-      # 
+
+      # posts
+       resources :posts
     end
   end
   # Defines the root path route ("/")
