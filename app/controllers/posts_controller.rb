@@ -1,9 +1,9 @@
 class PostsController < ApplicationController
-     skip_before_action :authorize_request, only: [:index, :show]
+     skip_before_action :authorize_request, only: [:index, :show, :find_by_user_id]
 
       def index
        begin
-         posts = Post.all()
+        posts = Post.all()
         render json: {
             status: "Success",
             status_code: 200,
@@ -145,5 +145,25 @@ class PostsController < ApplicationController
             }, 
             :status => :internal_server_error 
         end
+      end
+
+      def find_by_user_id
+        begin
+        posts = Post.all().where(user_id: params[:id])
+        render json: {
+            status: "Success",
+            status_code: 200,
+             message: "Fetched successfully", 
+             data: posts
+            }, 
+            :status => :ok 
+        rescue => exception
+             render json: {
+                message: exception, 
+                status_code: 500,
+                error: "Internal server error",
+            }, 
+            :status => :internal_server_error 
+        end      
       end
 end

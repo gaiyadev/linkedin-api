@@ -1,5 +1,6 @@
 Rails.application.routes.draw do
   $user_prefix = "users"
+  $post_prefix = 'posts'
 
   scope "/api" do
     scope '/v1' do
@@ -14,7 +15,8 @@ Rails.application.routes.draw do
       delete "#$user_prefix/:id", to: 'users#destroy'
 
       # posts
-       resources :posts
+      resources :posts
+      get "#$post_prefix/user/:id", to: 'posts#find_by_user_id'
     end
   end
   # Defines the root path route ("/")
