@@ -15,8 +15,8 @@ Rails.application.routes.draw do
       delete "#$user_prefix/:id", to: 'users#destroy'
 
       # posts
+      get "#$post_prefix/user", to: 'posts#find_by_user_id'
       resources :posts
-      get "#$post_prefix/user/:id", to: 'posts#find_by_user_id'
     end
   end
   # Defines the root path route ("/")

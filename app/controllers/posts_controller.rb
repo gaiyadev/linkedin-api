@@ -1,5 +1,5 @@
 class PostsController < ApplicationController
-     skip_before_action :authorize_request, only: [:index, :show, :find_by_user_id]
+     skip_before_action :authorize_request, only: [:index, :show]
 
       def index
        begin
@@ -149,7 +149,8 @@ class PostsController < ApplicationController
 
       def find_by_user_id
         begin
-        posts = Post.all().where(user_id: params[:id])
+        posts = Post.all().where(user_id: auth_id)
+        auth_id = @current_user.id
         render json: {
             status: "Success",
             status_code: 200,
