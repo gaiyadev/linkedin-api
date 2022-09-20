@@ -9,6 +9,7 @@ Rails.application.routes.draw do
       post "#$user_prefix/sign_in", to: 'users#sign_in'
       put "#$user_prefix/change_password", to: 'users#change_password'
       get "#$user_prefix/:id", to: 'users#find_by_id'
+      post "#$user_prefix/forgot_password", to: 'users#forgot_password'
       delete "#$user_prefix/:id", to: 'users#destroy'
       # 
     end

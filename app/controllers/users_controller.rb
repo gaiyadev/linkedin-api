@@ -185,22 +185,37 @@ class UsersController < ApplicationController
 
     # change_password
     def change_password
-        user_id = 1
+        user_id = 7
        begin
-         user = User.find_by(id: user_id)
-        if user.update(password_params)
-         render json: {
-            message: "password changes successfully",
-            status_code: 201,
+        user = User.find_by(id: user_id)
+        current_password = params[:current_password]
+        hashed_password = user[:password_digest]
+        is_match = BCrypt::Password.new(hashed_password) == current_password
+
+        if !is_match
+            render json: {
+            message: "Current password is invalid",
+            status_code: 403,
+            error: "Forbidden"
         }, 
-        status: :created   
+        status: :forbidden   
         else
-       render json: {
-            error:"Bad request",
-            message:  user.errors.full_messages,
-            status_code: 400
-        }, 
-        :status => :bad_request 
+            hash_password = BCrypt::Password.create(params[:password])
+            user.password_digest = hash_password
+            if user.update(password_params)
+            render json: {
+                message: "password changed successfully",
+                status_code: 201,
+            }, 
+            status: :created   
+            else
+            render json: {
+                    error:"Bad request",
+                    message:  user.errors.full_messages,
+                    status_code: 400
+            }, 
+            :status => :bad_request 
+            end
         end
        rescue => exception
         render json: { 
@@ -208,9 +223,40 @@ class UsersController < ApplicationController
             status_code: 500,
             error:"Internal server error", 
             },
-             status: :internal_server_error
+            status: :internal_server_error
        end
     end
+
+    # Forgot password
+    def forgot_password
+         begin
+         user = User.find_by(email: params[:email])
+        if user
+            render json: {
+                message: "Reset token sent",
+                status_code: 201,
+                data: user
+            }, 
+            status: :created   
+            else
+            render json: {
+                    error:"Bad request",
+                    message:  user.errors.full_messages,
+                    status_code: 400
+                }, 
+                :status => :bad_request 
+                end
+       rescue => exception
+        render json: { 
+            message: exception, 
+            status_code: 500,
+            error:"Internal server error", 
+            },
+            status: :internal_server_error
+       end
+    end
+
+
     # 
     private
     def user_params
