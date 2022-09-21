@@ -3,12 +3,19 @@ class PostsController < ApplicationController
 
       def index
        begin
-        posts = Post.all()
+        posts = Post.order(:created_at).all()    
+        posts_json = posts.as_json(
+            only: [:id, :title, :description, :created_at, :user_id],
+            include: {
+            user: { only: [:id,:surname, :othername, :email] },
+            }
+        )
+      
         render json: {
             status: "Success",
             status_code: 200,
              message: "Fetched successfully", 
-             data: posts
+             data: posts_json
             }, 
             :status => :ok    
        rescue => exception
@@ -24,6 +31,12 @@ class PostsController < ApplicationController
       def show
         begin
         post = Post.find_by(id: params[:id])
+        post_json = post.as_json(
+            only: [:id, :title, :description, :created_at, :user_id],
+            include: {
+            user: { only: [:id,:surname, :othername, :email] },
+            }
+        )
         if !post
          render json: {
             error: "Not found",
@@ -36,7 +49,7 @@ class PostsController < ApplicationController
             status: "Success",
             status_code: 200,
             message: "Fetched successfully", 
-            data: post
+            data: post_json
             }, 
             :status => :ok    
         end
@@ -54,10 +67,10 @@ class PostsController < ApplicationController
         post = Post.new()
         post.title = params[:title]
         post.description = params[:description]
-        auth_id = @current_user.id
+        post.user_id = @current_user.id
 
         begin
-              if post.save() 
+            if post.save() 
                 return render json: {
                 status: "Success", 
                 status_code: 201, 
@@ -65,7 +78,7 @@ class PostsController < ApplicationController
                 data: {
                     id: post.id,
                 }, 
-                }, 
+            }, 
                 :status => :created 
             else
                 render json: {
@@ -148,14 +161,20 @@ class PostsController < ApplicationController
       end
 
       def find_by_user_id
+        auth_id = @current_user.id
         begin
         posts = Post.all().where(user_id: auth_id)
-        auth_id = @current_user.id
+        posts_json = posts.as_json(
+            only: [:id, :title, :description, :created_at, :user_id],
+            include: {
+            user: { only: [:id,:surname, :othername, :email] },
+            }
+        )
         render json: {
             status: "Success",
             status_code: 200,
              message: "Fetched successfully", 
-             data: posts
+             data: posts_json
             }, 
             :status => :ok 
         rescue => exception

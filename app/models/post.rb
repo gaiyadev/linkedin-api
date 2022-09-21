@@ -1,5 +1,7 @@
 class Post < ApplicationRecord
-         validates :title, 
+    belongs_to :user
+
+    validates :title, 
      presence: { 
         scope: :title, 
         message: "Title is required"
@@ -8,8 +10,8 @@ class Post < ApplicationRecord
          minimum: 3, 
         too_short: "Title is too short"
     },
-    uniqueness: { scope: :title,
-        message: "title already exist" }
+
+    uniqueness: false
 
     validates :description,   
      presence: { 
